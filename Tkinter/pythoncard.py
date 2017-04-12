@@ -41,7 +41,6 @@ from openpyxl.utils import coordinate_from_string
 from openpyxl.styles import Font
 from header import header
 from search_student import search_Student
-from test_search import search_Student
 #from art import art_schedule
 from formular import formular
 #from exec import exe
@@ -98,17 +97,17 @@ class CardRequest(object):
         return self.pcsccardrequest.waitforcardevent()
 
 class GUI:
-    def __init__(self, master, hid):
+    #def __init__(self, master, hid):
+    def __init__(self, master):
         self.master = master
         master.title("JJAY Veterans Association HID Scanner")
-        #master.update_idletasks()
         width = 400
         height = 400
         x = (master.winfo_screenwidth() // 2) - (width // 2)
         y = (master.winfo_screenheight() // 2) - (height // 2)
         master.geometry('{}x{}+{}+{}'.format(width, height, x, y))
 
-        self.hid = hid #for parameter hid
+        #self.hid = hid #for parameter hid
 
         self.cardReader()
         self.closeButton()
@@ -121,17 +120,20 @@ class GUI:
         self.txt = Label(self.master, text="------Tap card to SIGN IN-------")
         self.txt.pack(side=TOP)
 
+        self.scanButton()
+
         self.scan = Button(self.master, text="Scan", command=self.scanButton)
         self.scan.pack()
-
-    def scanButton(self):
+        '''
         self.displayScan = Label(self.master, text="Scanning card...")
         self.displayScan.pack()   
+        
+        self.cr = CardRequest(timeout=None, newcardonly=True)   
         
         self.cardtype = "3B 8F 80 01 80 4F 0C A0 00 00 03 06 40 00 00 00 00 00 00 28"
         self.length=10     
         
-        self.cs = self.hid.waitforcard()
+        self.cs = self.cr.waitforcard()
         self.cs.connection.connect()
         self.cs.card = toHexString(self.cs.connection.getATR())
         self.SELECT = [0xFF, 0xCA, 0x00, 0x00, 0x00]
@@ -139,7 +141,7 @@ class GUI:
         self.response, self.sw1, self.sw2 = self.cs.connection.transmit(self.SELECT)
         self.texting = toHexString(self.response).replace(' ','')
         self.word_len=len(self.texting)
-        print("Success!")
+        #print("Success!")
         
         if self.cs.card == self.cardtype and self.length == self.word_len:
             header()
@@ -149,8 +151,41 @@ class GUI:
             self.cs.connection.disconnect()
             formular()
         else:
-            self.cs = self.hid.waitforcard()
+            self.cs = self.cr.waitforcard()
             self.cs.connection.disconnect()
+        '''
+
+    def scanButton(self):
+        
+        self.displayScan = Label(self.master, text="Scanning card...")
+        self.displayScan.pack()   
+        
+        self.cr = CardRequest(timeout=None, newcardonly=True)   
+        
+        self.cardtype = "3B 8F 80 01 80 4F 0C A0 00 00 03 06 40 00 00 00 00 00 00 28"
+        self.length=10     
+        
+        self.cs = self.cr.waitforcard()
+        self.cs.connection.connect()
+        self.cs.card = toHexString(self.cs.connection.getATR())
+        self.SELECT = [0xFF, 0xCA, 0x00, 0x00, 0x00]
+        
+        self.response, self.sw1, self.sw2 = self.cs.connection.transmit(self.SELECT)
+        self.texting = toHexString(self.response).replace(' ','')
+        self.word_len=len(self.texting)
+        #print("Success!")
+        
+        if self.cs.card == self.cardtype and self.length == self.word_len:
+            header()
+            self.a = search_Student(self.texting)
+            self.student = Label(self.master, text=self.a)
+            self.student.pack()
+            self.cs.connection.disconnect()
+            formular()
+        else:
+            self.cs = self.cr.waitforcard()
+            self.cs.connection.disconnect()
+        
         
 
 os.system("clear")
@@ -159,9 +194,11 @@ wb.active
 worksheet= wb.get_sheet_names()
 sheet = wb.get_sheet_by_name('Sheet')
 
+#if __name__ == "__main__":
 if __name__ == "__main__":
     root = Tk()
     #cr = CardRequest(timeout=10, cardType=cardtype)
-    cr = CardRequest(timeout=None, newcardonly=True)
-    my_gui = GUI(root,cr)
+    #cr = CardRequest(timeout=None, newcardonly=True)  
+    #my_gui = GUI(root, cr)
+    my_gui = GUI(root)
     root.mainloop()
